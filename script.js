@@ -4,12 +4,12 @@ document.addEventListener('DOMContentLoaded', function () {
   const classInput = document.getElementById('classNames');
   const resultsDiv = document.getElementById('results');
 
-  // Load saved values from localStorage
+  // Load saved values
   urlInput.value = localStorage.getItem('sfUrl') || '';
   sessionInput.value = localStorage.getItem('sfSession') || '';
   classInput.value = localStorage.getItem('sfClasses') || '';
 
-  // Save changes
+  // Save values on input
   [urlInput, sessionInput, classInput].forEach(input => {
     input.addEventListener('input', () => {
       localStorage.setItem('sfUrl', urlInput.value);
@@ -23,34 +23,44 @@ document.addEventListener('DOMContentLoaded', function () {
     const sessionId = sessionInput.value.trim();
     const classList = classInput.value.split('\n').map(c => c.trim()).filter(Boolean);
 
-    resultsDiv.innerText = '⏱ Running tests...';
+    resultsDiv.innerText = 'Running tests...';
 
     try {
-      const runRes = await fetch(`${url}/services/data/v60.0/tooling/runTestsSynchronous`, {
+      // Call proxy to run tests
+      const runRes = await fetch('/api/proxy', {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${sessionId}`,
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          tests: classList.map(c => ({ className: c }))
+          url: `${url}/services/data/v60.0/tooling/runTestsSynchronous`,
+          sessionId,
+          body: {
+            tests: classList.map(c => ({ className: c }))
+          }
         })
       });
+
       const runData = await runRes.json();
 
-      const covRes = await fetch(`${url}/services/data/v60.0/tooling/query/?q=${encodeURIComponent("SELECT ApexClassOrTrigger.Name, NumLinesCovered, NumLinesUncovered FROM ApexCodeCoverageAggregate")}`, {
-        headers: {
-          Authorization: `Bearer ${sessionId}`
-        }
+      // Call proxy to get code coverage
+      const covRes = await fetch('/api/proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: `${url}/services/data/v60.0/tooling/query/?q=${encodeURIComponent("SELECT ApexClassOrTrigger.Name, NumLinesCovered, NumLinesUncovered FROM ApexCodeCoverageAggregate")}`,
+          sessionId
+        })
       });
+
       const covData = await covRes.json();
 
-      const impacted = classList.map(c => c.replace(/Test$/, ''));
+      const testNames = classList.map(c => c.trim());
+      const impactedClasses = testNames.map(name => name.replace(/Test$/, ''));
+
       const relevantCoverage = covData.records.filter(r =>
-        impacted.includes(r.ApexClassOrTrigger.Name)
+        impactedClasses.includes(r.ApexClassOrTrigger.Name)
       );
 
-      let html = '<h4>Code Coverage</h4><table><tr><th>Class</th><th>Covered</th><th>Uncovered</th><th>%</th></tr>';
+      let html = '<h4>Code Coverage</h4><table border="1" cellspacing="0" cellpadding="4"><tr><th>Class</th><th>Covered</th><th>Uncovered</th><th>%</th></tr>';
       relevantCoverage.forEach(r => {
         const total = r.NumLinesCovered + r.NumLinesUncovered;
         const percent = total > 0 ? ((r.NumLinesCovered / total) * 100).toFixed(2) : '0.00';
@@ -60,7 +70,7 @@ document.addEventListener('DOMContentLoaded', function () {
       resultsDiv.innerHTML = html;
 
     } catch (e) {
-      resultsDiv.innerText = `Error: ${e.message}`;
+      resultsDiv.innerText = `❌ Error: ${e.message}`;
       console.error(e);
     }
   });
