@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Simple Test Runner</title>
+  <style>
+    body { font-family: Arial; width: 350px; padding: 10px; }
+    input, textarea { width: 100%; margin-bottom: 10px; }
+    button { width: 100%; padding: 8px; background-color: #1976d2; color: white; border: none; }
+    #results { margin-top: 10px; font-size: 14px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #ccc; padding: 4px; text-align: left; }
+  </style>
+</head>
+<body>
+  <h3>Simple Test Runner</h3>
+  <input type="text" id="instanceUrl" placeholder="Salesforce Instance URL">
+  <input type="text" id="sessionId" placeholder="Session ID">
+  <textarea id="classNames" placeholder="Test Class Names (one per line)"></textarea>
+  <button id="runBtn">Run Test</button>
+  <div id="results">Result will appear here</div>
+  <script src="script.js"></script>
+</body>
+</html>

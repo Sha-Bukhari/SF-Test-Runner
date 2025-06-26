@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Simple Test Runner",
+  "version": "1.0",
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  },
+  "permissions": ["storage", "scripting"],
+  "host_permissions": ["<all_urls>"]
+}
